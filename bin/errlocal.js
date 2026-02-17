@@ -9,8 +9,17 @@ import path from 'path';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 // import { Lingo } from '@lingo.dev/sdk'; // TODO: Fix package name
 import { LingoDotDevEngine  } from 'lingo.dev/sdk';
+import os from 'os';
+
 const Lingo = LingoDotDevEngine;
+
+// 1. Try loading from current directory (Project specific)
 dotenv.config();
+
+// 2. Try loading from home directory (Global config)
+// ~/.errlocal/.env
+const globalConfigPath = path.join(os.homedir(), '.errlocal', '.env');
+dotenv.config({ path: globalConfigPath });
 
 const STATE_FILE = path.join(process.cwd(), '.errlocal-state.json');
 

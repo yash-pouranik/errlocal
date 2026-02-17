@@ -9,6 +9,13 @@ An interactive CLI tool that wraps commands, analyzes errors with AI, and provid
 - **AI Analysis**: Uses Google Gemini to analyze errors and provide progressive hints.
 - **Localization**: Localizes hints into your preferred language using Lingo.dev.
 
+## Prerequisites
+
+Before installation, ensure you have:
+1.  **Node.js** (v18 or higher)
+2.  **Gemini API Key**: [Get it here](https://aistudio.google.com/app/apikey) (Free tier available)
+3.  **Lingo.dev API Key**: [Get it here](https://lingo.dev/) (For localization)
+
 ## Installation
 
 ### Method 1: Install directly from GitHub (Recommended)
@@ -35,16 +42,20 @@ npm install -g github:yash-pouranik/errlocal
     npm link
     ```
 
+## Configuration
+
+You can configure `errlocal` in two ways:
+
+1.  **Project-specific** (Recommended for sharing):
+    Create a `.env` file in your project root.
+
+2.  **Global** (Recommended for personal use):
+    Create a `.env` file in your home directory: `~/.errlocal/.env` (Linux/Mac) or `%USERPROFILE%\.errlocal\.env` (Windows).
+    This way, you don't need to create a `.env` file for every project.
+
 ## Usage
 
-1.  **Setup**:
-    Create a `.env` file in your current directory with your API keys:
-    ```env
-    GEMINI_API_KEY=your_gemini_key
-    LINGO_API_KEY=your_lingo_key
-    ```
-
-2.  **Run a command**:
+1.  **Run a command**:
     Wrap your command with `errlocal run`:
     ```bash
     errlocal run <command> [args...] --lang=<locale>
