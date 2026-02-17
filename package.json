@@ -1,0 +1,23 @@
+{
+  "name": "errlocal-",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "type": "module",
+  "bin": {
+    "errlocal": "./bin/errlocal.js"
+  },
+  "dependencies": {
+    "@google/generative-ai": "^0.24.1",
+    "chalk": "^5.6.2",
+    "commander": "^12.1.0",
+    "dotenv": "^16.6.1",
+    "execa": "^8.0.1"
+  }
+}
