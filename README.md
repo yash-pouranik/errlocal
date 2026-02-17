@@ -6,14 +6,14 @@ An interactive CLI tool that wraps commands, analyzes errors with AI, and provid
 
 - **Command Wrapping**: Runs any command (e.g., `node test.js`, `npm start`) and captures its exit code and stderr.
 - **Error Detection**: Detects non-zero exit codes or stderr output.
-- **AI Analysis**: Uses Google Gemini to analyze errors and provide progressive hints.
+- **AI Analysis**: Uses Groq (`llama3-70b`) to analyze errors and provide progressive hints.
 - **Localization**: Localizes hints into your preferred language using Lingo.dev.
 
 ## Prerequisites
 
 Before installation, ensure you have:
 1.  **Node.js** (v18 or higher)
-2.  **Gemini API Key**: [Get it here](https://aistudio.google.com/app/apikey) (Free tier available)
+2.  **Groq API Key**: [Get it here](https://console.groq.com/keys) (Fast & Free tier available)
 3.  **Lingo.dev API Key**: [Get it here](https://lingo.dev/) (For localization)
 4.  **Urbackend API Key**: [Get it here](https://urbackend.bitbros.in/) (Optional: For syncing logs)
 
@@ -56,7 +56,13 @@ You can configure `errlocal` in two ways:
 
 ## Usage
 
-1.  **Run a command**:
+1.  **Setup**:
+    Create a `.env` file in your current directory with your API keys:
+    ```env
+    GROQ_API_KEY=your_groq_key
+    LINGO_API_KEY=your_lingo_key
+    ```
+2.  **Run a command**:
     Wrap your command with `errlocal run`:
     ```bash
     errlocal run <command> [args...] --lang=<locale>

@@ -6,8 +6,7 @@ import chalk from 'chalk';
 import dotenv from 'dotenv';
 import fs from 'fs/promises';
 import path from 'path';
-import { GoogleGenerativeAI } from '@google/generative-ai';
-// import { Lingo } from '@lingo.dev/sdk'; // TODO: Fix package name
+import { Groq } from 'groq-sdk';
 import { LingoDotDevEngine  } from 'lingo.dev/sdk';
 import os from 'os';
 
@@ -39,13 +38,12 @@ async function loadState() {
 }
 
 async function analyzeError(errorOutput, command) {
-    const apiKey = process.env.GEMINI_API_KEY;
+    const apiKey = process.env.GROQ_API_KEY;
     if (!apiKey) {
-        throw new Error("GEMINI_API_KEY not found in environment variables.");
+        throw new Error("GROQ_API_KEY not found in environment variables.");
     }
 
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    const groq = new Groq({ apiKey });
 
     const prompt = `
     You are an expert developer assistant.
@@ -65,14 +63,23 @@ async function analyzeError(errorOutput, command) {
     ${errorOutput}
     `;
 
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    let text = response.text();
-    
-    // Clean up markdown code blocks if present
-    text = text.replace(/```json/g, '').replace(/```/g, '').trim();
-    
-    return JSON.parse(text);
+    const completion = await groq.chat.completions.create({
+        messages: [
+            {
+                role: "system",
+                content: "You are a helpful assistant that outputs JSON."
+            },
+            {
+                role: "user",
+                content: prompt
+            }
+        ],
+        model: "openai/gpt-oss-120b",
+        response_format: { type: "json_object" }
+    });
+
+    const content = completion.choices[0]?.message?.content || "{}";
+    return JSON.parse(content);
 }
 
 // --- CLI Logic ---
