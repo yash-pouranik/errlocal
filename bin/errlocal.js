@@ -8,7 +8,8 @@ import fs from 'fs/promises';
 import path from 'path';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 // import { Lingo } from '@lingo.dev/sdk'; // TODO: Fix package name
-
+import { LingoDotDevEngine  } from 'lingo.dev/sdk';
+const Lingo = LingoDotDevEngine;
 dotenv.config();
 
 const STATE_FILE = path.join(process.cwd(), '.errlocal-state.json');
@@ -74,7 +75,8 @@ program
 program
   .command('run <command> [args...]')
   .description('Run a command (e.g. errlocal run npm start)')
-  .action(async (command, args) => {
+  .option('--lang <locale>', 'Target language for localization (e.g. hi, es, fr)')
+  .action(async (command, args, options) => {
     try {
         console.log(chalk.blue(`Running: ${command} ${args.join(' ')}`));
         
@@ -101,14 +103,25 @@ program
                 // 1. Analyze with AI
                 const analysis = await analyzeError(stderrOutput, `${command} ${args.join(' ')}`);
                 
-                // 2. TODO: Localize with Lingo.dev
-                // const localized = await lingo.localize(analysis); 
-                
-                // Mock Localization for now
-                const localized = {
-                    hints: analysis.hints.map(h => h + " [Localized]"),
-                    finalExplanation: analysis.finalExplanation + " [Localized]"
-                };
+                let localized = analysis;
+
+                // 2. Localize with Lingo.dev if --lang is present
+                if (options.lang) {
+                    try {
+                        console.log(chalk.blue(`Translating to ${options.lang}...`));
+                        const lingo = new Lingo({ apiKey: process.env.LINGO_API_KEY });
+                        
+                        // Use localizeObject to translate the entire structure
+                        localized = await lingo.localizeObject(analysis, {
+                            sourceLocale: 'en',
+                            targetLocale: options.lang
+                        });
+
+                    } catch (lingoError) {
+                        console.error(chalk.red("Localization failed:"), lingoError.message);
+                        console.log(chalk.gray("Falling back to English."));
+                    }
+                }
 
                 // 3. Save State
                 const state = {
