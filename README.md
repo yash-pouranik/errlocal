@@ -15,6 +15,7 @@ Before installation, ensure you have:
 1.  **Node.js** (v18 or higher)
 2.  **Gemini API Key**: [Get it here](https://aistudio.google.com/app/apikey) (Free tier available)
 3.  **Lingo.dev API Key**: [Get it here](https://lingo.dev/) (For localization)
+4.  **Urbackend API Key**: [Get it here](https://urbackend.bitbros.in/) (Optional: For syncing logs)
 
 ## Installation
 
@@ -73,6 +74,20 @@ You can configure `errlocal` in two ways:
     errlocal next
     ```
     This shows the next progressive hint.
+
+4.  **Sync to Cloud**:
+    To save the error log to your Urbackend dashboard:
+    ```bash
+    errlocal sync
+    ```
+    (Requires `URBACKEND_API_KEY` in `.env`)
+
+    **Important**: Create a collection named `error_logs` in Urbackend with these columns:
+    - `command` (String)
+    - `error` (String)
+    - `hints` (String)
+    - `finalExplanation` (String)
+    - `timestamp` (String)
 
 ## License
 

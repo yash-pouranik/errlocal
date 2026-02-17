@@ -134,6 +134,8 @@ program
 
                 // 3. Save State
                 const state = {
+                    command: `${command} ${args.join(' ')}`,
+                    error: stderrOutput,
                     step: 0,
                     hints: localized.hints,
                     finalExplanation: localized.finalExplanation,
@@ -157,6 +159,54 @@ program
         console.error(chalk.red('Failed to run command:'), error.message);
         process.exit(1);
     }
+  });
+
+program
+  .command('sync')
+  .description('Sync the last error to Urbackend cloud')
+  .action(async () => {
+      const state = await loadState();
+      if (!state) {
+          console.log(chalk.red("No active error state found. Run a command first."));
+          return;
+      }
+
+      const apiKey = process.env.URBACKEND_API_KEY;
+      if (!apiKey) {
+          console.log(chalk.red("Missing URBACKEND_API_KEY in .env"));
+          console.log(chalk.yellow("Get your key from your Urbackend dashboard to sync logs."));
+          return;
+      }
+
+      try {
+          console.log(chalk.blue("Syncing error log to Urbackend..."));
+          
+          const response = await fetch('https://api.urbackend.bitbros.in/api/data/error_logs', {
+              method: 'POST',
+              headers: {
+                  'Content-Type': 'application/json',
+                  'x-api-key': apiKey
+              },
+              body: JSON.stringify({
+                  command: state.command,
+                  error: state.error,
+                  hints: JSON.stringify(state.hints), 
+                  finalExplanation: state.finalExplanation,
+                  timestamp: state.timestamp
+              })
+          });
+
+          if (!response.ok) {
+              const errorText = await response.text();
+              throw new Error(`API Error (${response.status}): ${errorText}`);
+          }
+
+          const data = await response.json();
+          console.log(chalk.green(`✅ Synced successfully! Log ID: ${data._id || 'Saved'}`));
+
+      } catch (err) {
+          console.error(chalk.red("Sync failed:"), err.message);
+      }
   });
 
 program
