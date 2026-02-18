@@ -1,128 +1,120 @@
-# errlocal
+<p align="center">
+  <h1 align="center">errlocal 🚀</h1>
+  <p align="center">
+    <strong>Fix runtime errors in seconds with AI & Localization.</strong>
+    <br />
+    The CLI tool that speaks your language.
+  </p>
+</p>
 
-An interactive CLI tool that wraps commands, analyzes errors with AI, and provides localized hints using Lingo.dev.
+<p align="center">
+  <a href="https://github.com/yash-pouranik/errlocal/blob/main/LICENSE">
+    <img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License" />
+  </a>
+  <a href="https://www.npmjs.com/">
+    <img src="https://img.shields.io/badge/npm-v0.1.0-red.svg" alt="Version" />
+  </a>
+  <a href="https://groq.com">
+    <img src="https://img.shields.io/badge/Powered%20by-Groq-orange" alt="Groq" />
+  </a>
+    <a href="https://lingo.dev">
+    <img src="https://img.shields.io/badge/Powered%20by-Lingo.dev-purple" alt="Lingo.dev" />
+  </a>
+</p>
 
-## Features
+<div align="center">
 
-- **Command Wrapping**: Runs any command (e.g., `node test.js`, `npm start`) and captures its exit code and stderr.
-- **Error Detection**: Detects non-zero exit codes or stderr output.
-- **AI Analysis**: Uses Groq (`llama3-70b`) to analyze errors and provide progressive hints.
-- **Smart Insights**: Instantly detects **Error Type** and **Confidence Level**.
-- **Localization**: Localizes hints into your preferred language using Lingo.dev.
-- **Cloud Sync**: Syncs error logs to Urbackend for backup and history.
+[Features](#features) • [Quick Start](#quick-start) • [Documentation](#documentation) • [Cloud Sync](#cloud-sync-urbackend)
 
-## Prerequisites
+</div>
 
-Before installation, ensure you have:
-1.  **Node.js** (v18 or higher)
-2.  **Groq API Key**: [Get it here](https://console.groq.com/keys) (Fast & Free tier available)
-3.  **Lingo.dev API Key**: [Get it here](https://lingo.dev/) (For localization)
-4.  **Urbackend API Key**: [Get it here](https://urbackend.bitbros.in/) (Optional: For syncing logs)
+---
 
-## Installation
+## ⚡ Features
 
-### Method 1: Install directly from GitHub (Recommended)
+| Feature | Description |
+| :--- | :--- |
+| **🤖 AI Analysis** | Instantly detects **Error Type**, **Confidence**, coverage, and likely causes using **Groq (Llama 3)**. |
+| **🌍 Localization** | Translates technical error hints into your native language (Hindi, Spanish, French, etc.) via **Lingo.dev**. |
+| **☁️ Cloud Sync** | Back up your error logs to **Urbackend** for long-term history and analytics. |
+| **🧠 Smart Hints** | Get progressive hints (`errlocal next`) instead of spoiling the solution immediately. |
+| **🛡️ Universal Wrapper** | Works with any command: `node`, `python`, `npm`, `go`, `rust`, etc. |
 
-You can install `errlocal` globally directly from the GitHub repository:
+---
+
+## 🚀 Quick Start
+
+### 1. Install
+From your terminal, install `errlocal` globally:
 
 ```bash
 npm install -g github:yash-pouranik/errlocal
 ```
 
-### Method 2: Clone and Link
+### 2. Configure
+Create a `.env` file (in your project or at `~/.errlocal/.env`) with your keys:
 
-1.  Clone the repository:
-    ```bash
-    git clone https://github.com/yash-pouranik/errlocal.git
-    cd errlocal
-    ```
-2.  Install dependencies:
-    ```bash
-    npm install
-    ```
-3.  Link globally:
-    ```bash
-    npm link
-    ```
-
-## Configuration
-
-You can configure `errlocal` in two ways:
-
-1.  **Project-specific** (Recommended for sharing):
-    Create a `.env` file in your project root.
-
-2.  **Global** (Recommended for personal use):
-    Create a `.env` file in your home directory: `~/.errlocal/.env` (Linux/Mac) or `%USERPROFILE%\.errlocal\.env` (Windows).
-    This way, you don't need to create a `.env` file for every project.
-
-## Usage
-
-### 1. Setup
-Create a `.env` file in your current directory (or globally at `~/.errlocal/.env`) with your API keys:
-```env
-GROQ_API_KEY=your_groq_key
-LINGO_API_KEY=your_lingo_key
-URBACKEND_API_KEY=your_urbackend_key
+```bash
+GROQ_API_KEY=gsk_...
+LINGO_API_KEY=ln_...
+URBACKEND_API_KEY=...    # Optional: For cloud sync
 ```
 
-### 2. Command Reference
+### 3. Run
+Wrap any command that's giving you trouble:
 
-| Command | Description | Example |
+```bash
+errlocal run node app.js --lang=hi
+```
+
+*(Watch it catch the error and explain it in Hindi!)*
+
+---
+
+## 📚 Documentation
+
+### Command Reference
+
+| Command | Usage | Description |
 | :--- | :--- | :--- |
-| **`errlocal run <cmd> --lang=<code>`** | Runs a command, captures errors, analyzes & localizes hints. | `errlocal run node app.js --lang=hi`|
-| **`errlocal next`** | Shows the next progressive hint for the last error. | `errlocal next` |
-| **`errlocal sync`** | Syncs the last error log to Urbackend cloud. | `errlocal sync` |
-| **`errlocal history`** | Fetches the last 5 error logs from Urbackend. | `errlocal history` |
-| **`errlocal solved "<note>"`** | Marks the last synced error as SOLVED in the cloud. | `errlocal solved "Fixed type error"` |
+| **Run** | `errlocal run <cmd> [flags]` | Executes a command. If it fails, AI analyzes the stderr. |
+| **Next Hint** | `errlocal next` | Shows the next hint (1 → 2 → 3 → Solution). |
+| **Sync** | `errlocal sync` | Uploads the last error log to Urbackend. |
+| **History** | `errlocal history` | Fetches the last 5 errors from the cloud. |
+| **Solved** | `errlocal solved "<note>"` | Marks the last synced error as "SOLVED". |
 
-### 3. Workflow Example
+### Flags
+- `--lang=<code >`: Target language ISO code (e.g., `hi`, `es`, `fr`, `de`).
 
-1.  **Run & Fail**:
-    ```bash
-    errlocal run node app.js --lang=es
-    ```
-    *Output*: Shows "Analysis" (Type/Confidence) and "Hint 1" in Spanish.
+---
 
-2.  **Get More Help**:
-    ```bash
-    errlocal next
-    ```
-    *Output*: Shows "Hint 2".
+## ☁️ Cloud Sync (Urbackend)
 
-3.  **Sync to Cloud**:
-    ```bash
-    errlocal sync
-    ```
-    *Output*: `✅ Synced successfully! Log ID: ...`
+To enable **Sync**, **History**, and **Solved** features, configure your Urbackend project.
 
-4.  **Fix & Mark Solved**:
-    (You fix the bug in your code)
-    ```bash
-    errlocal solved "Added missing import"
-    ```
-    *Output*: `✅ Error marked as SOLVED in cloud!`
+1.  **Create Project**: Log in to [Urbackend Dashboard](https://urbackend.bitbros.in/).
+2.  **Get Key**: Copy your **Public API Key** to `.env`.
+3.  **Create Table**: Create a collection named **`error_logs`** with this exact schema:
 
-## Urbackend Configuration (For Cloud Sync)
+> **⚠️ Important**: All columns must be type **String**.
 
-To enable `sync`, `history`, and `solved` commands, you must configure your Urbackend project.
+| Column | Type | Description |
+| :--- | :--- | :--- |
+| `command` | String | Executed command |
+| `error` | String | Raw stderr output |
+| `hints` | String | JSON array of hints |
+| `finalExplanation` | String | Full solution JSON |
+| `timestamp` | String | ISO Date string |
+| `status` | String | "OPEN" or "SOLVED" |
+| `solution` | String | User's fix note |
 
-1.  **Create a Project**: Go to [Urbackend Dashboard](https://urbackend.bitbros.in/) and create a project.
-2.  **Get API Key**: Copy the API Key and add it to your `.env` as `URBACKEND_API_KEY`.
-3.  **Create Table**: Create a collection named **`error_logs`** with the following schema:
+---
 
-| Column Name        | Type   | Purpose                                      |
-| ------------------ | ------ | -------------------------------------------- |
-| `command`          | String | The command that was executed                |
-| `error`            | String | The raw error output                         |
-| `hints`            | String | JSON string of progressive hints             |
-| `finalExplanation` | String | JSON string of the full explanation          |
-| `timestamp`        | String | ISO timestamp of when the error occurred     |
-| `status`           | String | Status of the error (e.g., "SOLVED", "OPEN") |
-| `solution`         | String | User's note on how it was fixed              |
+## 🤝 Contributing
 
-> **Note**: All fields must be of type **String** because Urbackend requires flattened payloads for this integration.
+We welcome contributions! Please fork the repo and submit a PR.
+This project is licensed under the **MIT License**.
 
-## License
-
-MIT
+<p align="center">
+  Made with ❤️ by Yash Pouranik
+</p>
