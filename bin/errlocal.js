@@ -4,88 +4,26 @@ import { program } from 'commander';
 import { execa } from 'execa';
 import chalk from 'chalk';
 import dotenv from 'dotenv';
-import fs from 'fs/promises';
 import path from 'path';
-import { Groq } from 'groq-sdk';
-import { LingoDotDevEngine  } from 'lingo.dev/sdk';
 import os from 'os';
 
-const Lingo = LingoDotDevEngine;
+// Import modules
+import { loadState, saveState } from '../src/state.js';
+import { analyzeError } from '../src/ai.js';
+import { localizeContent } from '../src/lingo.js';
+import { syncLog, fetchHistory, markSolved } from '../src/api.js';
 
 // 1. Try loading from current directory (Project specific)
 dotenv.config();
 
 // 2. Try loading from home directory (Global config)
-// ~/.errlocal/.env
 const globalConfigPath = path.join(os.homedir(), '.errlocal', '.env');
 dotenv.config({ path: globalConfigPath });
-
-const STATE_FILE = path.join(process.cwd(), '.errlocal-state.json');
-
-// --- Helper Functions ---
-
-async function saveState(data) {
-    await fs.writeFile(STATE_FILE, JSON.stringify(data, null, 2));
-}
-
-async function loadState() {
-    try {
-        const data = await fs.readFile(STATE_FILE, 'utf-8');
-        return JSON.parse(data);
-    } catch {
-        return null; // No state exists
-    }
-}
-
-async function analyzeError(errorOutput, command) {
-    const apiKey = process.env.GROQ_API_KEY;
-    if (!apiKey) {
-        throw new Error("GROQ_API_KEY not found in environment variables.");
-    }
-
-    const groq = new Groq({ apiKey });
-
-    const prompt = `
-    You are an expert developer assistant.
-    Analyze the following error output from the command "${command}".
-    
-    Provide your response in strict JSON format with the following structure:
-    {
-        "hints": [
-            "Hint 1: A brief, high-level pointer (e.g., check assumptions).",
-            "Hint 2: A more specific pointer (e.g., check async/await).",
-            "Hint 3: A very specific clue about the code logic."
-        ],
-        "finalExplanation": "A detailed explanation of the error and how to fix it."
-    }
-
-    Error Output:
-    ${errorOutput}
-    `;
-
-    const completion = await groq.chat.completions.create({
-        messages: [
-            {
-                role: "system",
-                content: "You are a helpful assistant that outputs JSON."
-            },
-            {
-                role: "user",
-                content: prompt
-            }
-        ],
-        model: "openai/gpt-oss-120b",
-        response_format: { type: "json_object" }
-    });
-
-    const content = completion.choices[0]?.message?.content || "{}";
-    return JSON.parse(content);
-}
 
 // --- CLI Logic ---
 
 program
-  .version('0.0.1')
+  .version('0.1.0')
   .description('Run a command and localize its error output using AI & Lingo.dev');
 
 program
@@ -125,33 +63,40 @@ program
                 if (options.lang) {
                     try {
                         console.log(chalk.blue(`Translating to ${options.lang}...`));
-                        const lingo = new Lingo({ apiKey: process.env.LINGO_API_KEY });
-                        
-                        // Use localizeObject to translate the entire structure
-                        localized = await lingo.localizeObject(analysis, {
-                            sourceLocale: 'en',
-                            targetLocale: options.lang
-                        });
-
+                        localized = await localizeContent(analysis, options.lang);
                     } catch (lingoError) {
                         console.error(chalk.red("Localization failed:"), lingoError.message);
                         console.log(chalk.gray("Falling back to English."));
                     }
                 }
 
-                // 3. Save State
+                // 3. Save State (Combine enhanced fields for compatibility)
+                const enhancedExplanation = `
+**Error Type:** ${localized.errorType}
+**Confidence:** ${localized.confidence}
+**Likely Cause:** ${localized.likelyCause}
+**Suggested Fix:** ${localized.suggestedFix}
+
+---
+${localized.finalExplanation}
+                `.trim();
+
                 const state = {
                     command: `${command} ${args.join(' ')}`,
                     error: stderrOutput,
                     step: 0,
                     hints: localized.hints,
-                    finalExplanation: localized.finalExplanation,
+                    finalExplanation: enhancedExplanation,
                     timestamp: new Date().toISOString()
                 };
                 await saveState(state);
 
-                // 4. Show First Hint
-                console.log(chalk.bold.cyan("🔍 Hint 1:"));
+                // 4. Show Analysis & First Hint
+                console.log(chalk.bold.magenta(`\n🧠 Analysis:`));
+                console.log(`${chalk.bold("Type:")} ${localized.errorType}`);
+                console.log(`${chalk.bold("Confidence:")} ${localized.confidence}`);
+                
+                console.log(chalk.bold.cyan("\n🔍 Hint 1:"));
                 console.log(localized.hints[0]);
                 console.log(chalk.gray("\n(Run 'errlocal next' for more hints)"));
 
@@ -178,38 +123,9 @@ program
           return;
       }
 
-      const apiKey = process.env.URBACKEND_API_KEY;
-      if (!apiKey) {
-          console.log(chalk.red("Missing URBACKEND_API_KEY in .env"));
-          console.log(chalk.yellow("Get your key from your Urbackend dashboard to sync logs."));
-          return;
-      }
-
       try {
           console.log(chalk.blue("Syncing error log to Urbackend..."));
-          
-          const response = await fetch('https://api.urbackend.bitbros.in/api/data/error_logs', {
-              method: 'POST',
-              headers: {
-                  'Content-Type': 'application/json',
-                  'x-api-key': apiKey
-              },
-              body: JSON.stringify({
-                  command: state.command,
-                  error: state.error,
-                  hints: JSON.stringify(state.hints), 
-                  finalExplanation: state.finalExplanation,
-                  timestamp: state.timestamp
-              })
-          });
-
-          if (!response.ok) {
-              const errorText = await response.text();
-              throw new Error(`API Error (${response.status}): ${errorText}`);
-          }
-
-          const data = await response.json();
-          const logId = data._id;
+          const logId = await syncLog(state);
           console.log(chalk.green(`✅ Synced successfully! Log ID: ${logId || 'Saved'}`));
 
           if (logId) {
@@ -226,36 +142,21 @@ program
   .command('history')
   .description('Show past error logs from Urbackend')
   .action(async () => {
-      const apiKey = process.env.URBACKEND_API_KEY;
-      if (!apiKey) {
-          console.log(chalk.red("Missing URBACKEND_API_KEY in .env"));
-          return;
-      }
-
       try {
-          // Fetch all items from 'error_logs' collection
-          const response = await fetch('https://api.urbackend.bitbros.in/api/data/error_logs', {
-              headers: { 'x-api-key': apiKey }
-          });
-
-          if (!response.ok) {
-              throw new Error(`API Error: ${response.statusText}`);
-          }
-
-          const data = await response.json();
-          // Assuming data is an array of objects
-          if (!Array.isArray(data)) {
-              console.log(chalk.yellow("No history found or unexpected format."));
+          const history = await fetchHistory();
+          
+          if (history.length === 0) {
+              console.log(chalk.yellow("No history found."));
               return;
           }
 
-          // Sort by timestamp desc (if not already) and take top 5
-          const history = data.slice(-5).reverse(); 
+          // Sort by timestamp desc and take top 5
+          const recent = history.slice(-5).reverse(); 
 
           console.log(chalk.bold.blue("\n📜 Recent Error History (Last 5):"));
           console.log(chalk.gray("------------------------------------------------"));
 
-          history.forEach((item, index) => {
+          recent.forEach((item, index) => {
               const time = item.timestamp ? new Date(item.timestamp).toLocaleString() : 'Unknown Time';
               console.log(`${index + 1}. ${chalk.bold.white(item.command || 'Unknown Command')}`);
               console.log(`   ${chalk.red(item.error ? item.error.split('\n')[0] : 'No error output')}...`); 
@@ -278,37 +179,13 @@ program
           return;
       }
 
-      const apiKey = process.env.URBACKEND_API_KEY;
-      if (!apiKey) {
-          console.log(chalk.red("Missing URBACKEND_API_KEY in .env"));
-          return;
-      }
-
       const note = noteParts.join(' ') || "Fixed by user";
 
       try {
           console.log(chalk.blue(`Marking log ${state.logId} as SOLVED...`));
-
-          // Urbackend PUT /api/data/:collection/:id
-          const response = await fetch(`https://api.urbackend.bitbros.in/api/data/error_logs/${state.logId}`, {
-              method: 'PUT',
-              headers: {
-                  'Content-Type': 'application/json',
-                  'x-api-key': apiKey
-              },
-              body: JSON.stringify({
-                  status: "SOLVED",
-                  solution: note
-              })
-          });
-
-          if (!response.ok) {
-              throw new Error(`API Error: ${response.statusText}`);
-          }
-
+          await markSolved(state.logId, note);
           console.log(chalk.green("✅ Error marked as SOLVED in cloud!"));
           
-          // Optional: Clear state or just ID?
           delete state.logId;
           await saveState(state);
 
@@ -336,21 +213,13 @@ program
       } else {
           console.log(chalk.bold.green("✅ Full Explanation:"));
           console.log(state.finalExplanation);
-          // Optional: Clear state or keep it?
-          // await fs.unlink(STATE_FILE); 
       }
   });
 
-// Handle default command (backward compatibility/easier typing)
-if (process.argv.length > 2 && !['run', 'next', '--help', '-h', '--version', '-V'].includes(process.argv[2])) {
+// Handle default command
+if (process.argv.length > 2 && !['run', 'next', 'sync', 'history', 'solved', '--help', '-h', '--version', '-V'].includes(process.argv[2])) {
     // If the first arg is not a known command, treat it as "run"
-    const [node, script, ...args] = process.argv;
-    // Reconstruction is tricky with commander, simpler to force user to use 'run' or just parse manually if needed.
-    // For now, let's stick to explicit 'run' or adjust arguments.
-    // Actually, let's make the catch-all work:
-    
-    // We can't easily perform the catch-all with standard subcommands setup unless we use a default command.
-    // Let's refactor slightly to use a default command for "run".
+     // Note: This logic is tricky with modules as standard, leaving simple for now
 }
 
 program.parse(process.argv);

@@ -7,6 +7,7 @@ An interactive CLI tool that wraps commands, analyzes errors with AI, and provid
 - **Command Wrapping**: Runs any command (e.g., `node test.js`, `npm start`) and captures its exit code and stderr.
 - **Error Detection**: Detects non-zero exit codes or stderr output.
 - **AI Analysis**: Uses Groq (`llama3-70b`) to analyze errors and provide progressive hints.
+- **Smart Insights**: Instantly detects **Error Type** and **Confidence Level**.
 - **Localization**: Localizes hints into your preferred language using Lingo.dev.
 - **Cloud Sync**: Syncs error logs to Urbackend for backup and history.
 
@@ -57,59 +58,54 @@ You can configure `errlocal` in two ways:
 
 ## Usage
 
-1.  **Setup**:
-    Create a `.env` file in your current directory with your API keys:
-    ```env
-    GROQ_API_KEY=your_groq_key
-    LINGO_API_KEY=your_lingo_key
-    ```
-2.  **Run a command**:
-    Wrap your command with `errlocal run`:
-    ```bash
-    errlocal run <command> [args...] --lang=<locale>
-    ```
+### 1. Setup
+Create a `.env` file in your current directory (or globally at `~/.errlocal/.env`) with your API keys:
+```env
+GROQ_API_KEY=your_groq_key
+LINGO_API_KEY=your_lingo_key
+URBACKEND_API_KEY=your_urbackend_key
+```
 
-    Example:
-    ```bash
-    errlocal run node app.js --lang=hi
-    ```
-    (This will run `node app.js`, capture any errors, and show hints in Hindi)
+### 2. Command Reference
 
-3.  **Get more hints**:
-    If the first hint isn't enough, run:
+| Command | Description | Example |
+| :--- | :--- | :--- |
+| **`errlocal run <cmd> --lang=<code>`** | Runs a command, captures errors, analyzes & localizes hints. | `errlocal run node app.js --lang=hi`|
+| **`errlocal next`** | Shows the next progressive hint for the last error. | `errlocal next` |
+| **`errlocal sync`** | Syncs the last error log to Urbackend cloud. | `errlocal sync` |
+| **`errlocal history`** | Fetches the last 5 error logs from Urbackend. | `errlocal history` |
+| **`errlocal solved "<note>"`** | Marks the last synced error as SOLVED in the cloud. | `errlocal solved "Fixed type error"` |
+
+### 3. Workflow Example
+
+1.  **Run & Fail**:
+    ```bash
+    errlocal run node app.js --lang=es
+    ```
+    *Output*: Shows "Analysis" (Type/Confidence) and "Hint 1" in Spanish.
+
+2.  **Get More Help**:
     ```bash
     errlocal next
     ```
-    This shows the next progressive hint.
+    *Output*: Shows "Hint 2".
 
-4.  **Sync to Cloud**:
-    To save the error log to your Urbackend dashboard:
+3.  **Sync to Cloud**:
     ```bash
     errlocal sync
     ```
-    (Requires `URBACKEND_API_KEY` in `.env`)
+    *Output*: `✅ Synced successfully! Log ID: ...`
 
-5.  **View History**:
-    To see your recent error logs from the cloud:
+4.  **Fix & Mark Solved**:
+    (You fix the bug in your code)
     ```bash
-    errlocal history
+    errlocal solved "Added missing import"
     ```
+    *Output*: `✅ Error marked as SOLVED in cloud!`
 
-    **Important**: Create a collection named `error_logs` in Urbackend with these columns:
-    - `command` (String)
-    - `error` (String)
-    - `hints` (String)
-    - `finalExplanation` (String)
-
-6.  **Mark as Solved**:
-    Once you fix the error, update its status in the cloud:
-    ```bash
-    errlocal solved "Fixed by adding await"
-    ```
-    (Requires `status` and `solution` columns in your Urbackend table)
 ## Urbackend Configuration (For Cloud Sync)
 
-To enable `errlocal sync`, `history`, and `solved` commands, you must configure your Urbackend project.
+To enable `sync`, `history`, and `solved` commands, you must configure your Urbackend project.
 
 1.  **Create a Project**: Go to [Urbackend Dashboard](https://urbackend.bitbros.in/) and create a project.
 2.  **Get API Key**: Copy the API Key and add it to your `.env` as `URBACKEND_API_KEY`.
