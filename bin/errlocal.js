@@ -209,10 +209,111 @@ program
           }
 
           const data = await response.json();
-          console.log(chalk.green(`✅ Synced successfully! Log ID: ${data._id || 'Saved'}`));
+          const logId = data._id;
+          console.log(chalk.green(`✅ Synced successfully! Log ID: ${logId || 'Saved'}`));
+
+          if (logId) {
+              state.logId = logId;
+              await saveState(state);
+          }
 
       } catch (err) {
           console.error(chalk.red("Sync failed:"), err.message);
+      }
+  });
+
+program
+  .command('history')
+  .description('Show past error logs from Urbackend')
+  .action(async () => {
+      const apiKey = process.env.URBACKEND_API_KEY;
+      if (!apiKey) {
+          console.log(chalk.red("Missing URBACKEND_API_KEY in .env"));
+          return;
+      }
+
+      try {
+          // Fetch all items from 'error_logs' collection
+          const response = await fetch('https://api.urbackend.bitbros.in/api/data/error_logs', {
+              headers: { 'x-api-key': apiKey }
+          });
+
+          if (!response.ok) {
+              throw new Error(`API Error: ${response.statusText}`);
+          }
+
+          const data = await response.json();
+          // Assuming data is an array of objects
+          if (!Array.isArray(data)) {
+              console.log(chalk.yellow("No history found or unexpected format."));
+              return;
+          }
+
+          // Sort by timestamp desc (if not already) and take top 5
+          const history = data.slice(-5).reverse(); 
+
+          console.log(chalk.bold.blue("\n📜 Recent Error History (Last 5):"));
+          console.log(chalk.gray("------------------------------------------------"));
+
+          history.forEach((item, index) => {
+              const time = item.timestamp ? new Date(item.timestamp).toLocaleString() : 'Unknown Time';
+              console.log(`${index + 1}. ${chalk.bold.white(item.command || 'Unknown Command')}`);
+              console.log(`   ${chalk.red(item.error ? item.error.split('\n')[0] : 'No error output')}...`); 
+              console.log(`   ${chalk.gray(time)}`);
+              console.log(chalk.gray("------------------------------------------------"));
+          });
+
+      } catch (err) {
+          console.error(chalk.red("Failed to fetch history:"), err.message);
+      }
+  });
+
+program
+  .command('solved [note...]')
+  .description('Mark the last synced error as SOLVED')
+  .action(async (noteParts) => {
+      const state = await loadState();
+      if (!state || !state.logId) {
+          console.log(chalk.red("No active synced error found. Run 'errlocal sync' first."));
+          return;
+      }
+
+      const apiKey = process.env.URBACKEND_API_KEY;
+      if (!apiKey) {
+          console.log(chalk.red("Missing URBACKEND_API_KEY in .env"));
+          return;
+      }
+
+      const note = noteParts.join(' ') || "Fixed by user";
+
+      try {
+          console.log(chalk.blue(`Marking log ${state.logId} as SOLVED...`));
+
+          // Urbackend PUT /api/data/:collection/:id
+          const response = await fetch(`https://api.urbackend.bitbros.in/api/data/error_logs/${state.logId}`, {
+              method: 'PUT',
+              headers: {
+                  'Content-Type': 'application/json',
+                  'x-api-key': apiKey
+              },
+              body: JSON.stringify({
+                  status: "SOLVED",
+                  solution: note
+              })
+          });
+
+          if (!response.ok) {
+              throw new Error(`API Error: ${response.statusText}`);
+          }
+
+          console.log(chalk.green("✅ Error marked as SOLVED in cloud!"));
+          
+          // Optional: Clear state or just ID?
+          delete state.logId;
+          await saveState(state);
+
+      } catch (err) {
+          console.error(chalk.red("Failed to update status:"), err.message);
       }
   });
 

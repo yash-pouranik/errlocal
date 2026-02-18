@@ -8,6 +8,7 @@ An interactive CLI tool that wraps commands, analyzes errors with AI, and provid
 - **Error Detection**: Detects non-zero exit codes or stderr output.
 - **AI Analysis**: Uses Groq (`llama3-70b`) to analyze errors and provide progressive hints.
 - **Localization**: Localizes hints into your preferred language using Lingo.dev.
+- **Cloud Sync**: Syncs error logs to Urbackend for backup and history.
 
 ## Prerequisites
 
@@ -88,13 +89,44 @@ You can configure `errlocal` in two ways:
     ```
     (Requires `URBACKEND_API_KEY` in `.env`)
 
+5.  **View History**:
+    To see your recent error logs from the cloud:
+    ```bash
+    errlocal history
+    ```
+
     **Important**: Create a collection named `error_logs` in Urbackend with these columns:
     - `command` (String)
     - `error` (String)
     - `hints` (String)
     - `finalExplanation` (String)
-    - `timestamp` (String)
+
+6.  **Mark as Solved**:
+    Once you fix the error, update its status in the cloud:
+    ```bash
+    errlocal solved "Fixed by adding await"
+    ```
+    (Requires `status` and `solution` columns in your Urbackend table)
+## Urbackend Configuration (For Cloud Sync)
+
+To enable `errlocal sync`, `history`, and `solved` commands, you must configure your Urbackend project.
+
+1.  **Create a Project**: Go to [Urbackend Dashboard](https://urbackend.bitbros.in/) and create a project.
+2.  **Get API Key**: Copy the API Key and add it to your `.env` as `URBACKEND_API_KEY`.
+3.  **Create Table**: Create a collection named **`error_logs`** with the following schema:
+
+| Column Name        | Type   | Purpose                                      |
+| ------------------ | ------ | -------------------------------------------- |
+| `command`          | String | The command that was executed                |
+| `error`            | String | The raw error output                         |
+| `hints`            | String | JSON string of progressive hints             |
+| `finalExplanation` | String | JSON string of the full explanation          |
+| `timestamp`        | String | ISO timestamp of when the error occurred     |
+| `status`           | String | Status of the error (e.g., "SOLVED", "OPEN") |
+| `solution`         | String | User's note on how it was fixed              |
+
+> **Note**: All fields must be of type **String** because Urbackend requires flattened payloads for this integration.
 
 ## License
 
-ISC
+MIT
