@@ -7,6 +7,8 @@ import dotenv from 'dotenv';
 import path from 'path';
 import os from 'os';
 
+import fs from 'fs/promises';
+
 // Import modules
 import { loadState, saveState } from '../src/state.js';
 import { analyzeError } from '../src/ai.js';
@@ -23,9 +25,11 @@ dotenv.config({ path: globalConfigPath });
 
 // --- CLI Logic ---
 
+const pkg = JSON.parse(await fs.readFile(new URL('../package.json', import.meta.url)));
+
 program
-  .version('0.1.0')
-  .description('Run a command and localize its error output using AI & Lingo.dev');
+    .version(pkg.version, '-v, -V, --version')
+    .description('Run a command and localize its error output using AI & Lingo.dev');
 
 program
   .command('run <command> [args...]')
