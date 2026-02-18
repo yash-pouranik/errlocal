@@ -49,7 +49,7 @@
 From your terminal, install `errlocal` globally:
 
 ```bash
-npm install -g github:yash-pouranik/errlocal
+npm install -g errlocal
 ```
 
 ### 2. Configure
@@ -117,5 +117,5 @@ We welcome contributions! Please fork the repo and submit a PR.
 This project is licensed under the **MIT License**.
 
 <p align="center">
-  Made with ❤️ by Yash Pouranik
+  Made with ❤️ by Yash Pouranik during Lingo.dev hackathon
 </p>

@@ -21,6 +21,7 @@
   "bin": {
     "errlocal": "./bin/errlocal.js"
   },
+  "preferGlobal": true,
   "repository": {
     "type": "git",
     "url": "git+https://github.com/yash-pouranik/errlocal.git"
