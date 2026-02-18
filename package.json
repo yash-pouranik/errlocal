@@ -1,17 +1,29 @@
 {
-  "name": "errlocal-",
+  "name": "errlocal",
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": [],
+  "keywords": [
+    "cli",
+    "error-handler",
+    "ai",
+    "debugging",
+    "localization",
+    "groq",
+    "lingo"
+  ],
   "author": "Yash Pouranik",
   "license": "MIT",
-  "description": "",
+  "description": "A CLI tool to fix runtime errors in seconds with AI & Localization.",
   "type": "module",
   "bin": {
     "errlocal": "./bin/errlocal.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yash-pouranik/errlocal.git"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
