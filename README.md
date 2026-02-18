@@ -35,6 +35,7 @@
 | Feature | Description |
 | :--- | :--- |
 | **🤖 AI Analysis** | Instantly detects **Error Type**, **Confidence**, coverage, and likely causes using **Groq (Llama 3)**. |
+| **📄 Code Context** | **NEW!** Reads your actual code to understand the bug's origin (file & line context). |
 | **🌍 Localization** | Translates technical error hints into your native language (Hindi, Spanish, French, etc.) via **Lingo.dev**. |
 | **☁️ Cloud Sync** | Back up your error logs to **Urbackend** for long-term history and analytics. |
 | **🧠 Smart Hints** | Get progressive hints (`errlocal next`) instead of spoiling the solution immediately. |

@@ -1,7 +1,7 @@
 
 import { Groq } from 'groq-sdk';
 
-export async function analyzeError(errorOutput, command) {
+export async function analyzeError(errorOutput, command, codeContext = null) {
     const apiKey = process.env.GROQ_API_KEY;
     if (!apiKey) {
         throw new Error("GROQ_API_KEY not found in environment variables.");
@@ -9,9 +9,20 @@ export async function analyzeError(errorOutput, command) {
 
     const groq = new Groq({ apiKey });
 
+    let contextSection = "";
+    if (codeContext) {
+        contextSection = `
+    Referenced Code (${codeContext.filePath}:${codeContext.lineNumber}):
+    \`\`\`
+    ${codeContext.codeSnippet}
+    \`\`\`
+        `;
+    }
+
     const prompt = `
     You are an expert developer assistant.
     Analyze the following error output from the command "${command}".
+    ${contextSection}
     
     Provide your response in strict JSON format with the following structure:
     {

@@ -10,13 +10,14 @@ import os from 'os';
 // Import modules
 import { loadState, saveState } from '../src/state.js';
 import { analyzeError } from '../src/ai.js';
+import { getErrorContext } from '../src/context.js';
 import { localizeContent } from '../src/lingo.js';
 import { syncLog, fetchHistory, markSolved } from '../src/api.js';
 
-// 1. Try loading from current directory (Project specific)
+// load project config
 dotenv.config();
 
-// 2. Try loading from home directory (Global config)
+// load global config
 const globalConfigPath = path.join(os.homedir(), '.errlocal', '.env');
 dotenv.config({ path: globalConfigPath });
 
@@ -54,12 +55,16 @@ program
             console.log(chalk.yellow('\n--- ⚠️  Wait! Analyzing error... ---\n'));
 
             try {
-                // 1. Analyze with AI
-                const analysis = await analyzeError(stderrOutput, `${command} ${args.join(' ')}`);
+                // analyze error
+                const codeContext = await getErrorContext(stderrOutput);
+                if (codeContext) {
+                    console.log(chalk.gray(`\n   📄 Found context: ${path.basename(codeContext.filePath)}:${codeContext.lineNumber}`));
+                }
+
+                const analysis = await analyzeError(stderrOutput, `${command} ${args.join(' ')}`, codeContext);
                 
                 let localized = analysis;
 
-                // 2. Localize with Lingo.dev if --lang is present
                 if (options.lang) {
                     try {
                         console.log(chalk.blue(`Translating to ${options.lang}...`));
@@ -70,7 +75,7 @@ program
                     }
                 }
 
-                // 3. Save State (Combine enhanced fields for compatibility)
+                // save state
                 const enhancedExplanation = `
 **Error Type:** ${localized.errorType}
 **Confidence:** ${localized.confidence}
@@ -91,7 +96,6 @@ ${localized.finalExplanation}
                 };
                 await saveState(state);
 
-                // 4. Show Analysis & First Hint
                 console.log(chalk.bold.magenta(`\n🧠 Analysis:`));
                 console.log(`${chalk.bold("Type:")} ${localized.errorType}`);
                 console.log(`${chalk.bold("Confidence:")} ${localized.confidence}`);
@@ -218,8 +222,7 @@ program
 
 // Handle default command
 if (process.argv.length > 2 && !['run', 'next', 'sync', 'history', 'solved', '--help', '-h', '--version', '-V'].includes(process.argv[2])) {
-    // If the first arg is not a known command, treat it as "run"
-     // Note: This logic is tricky with modules as standard, leaving simple for now
+    // If command not recognized, logic to handle or warn can go here
 }
 
 program.parse(process.argv);

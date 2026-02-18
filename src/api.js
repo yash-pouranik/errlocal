@@ -37,7 +37,7 @@ export async function fetchHistory() {
         throw new Error("Missing URBACKEND_API_KEY");
     }
 
-    // Fetch all items from 'error_logs' collection
+    // fetch error logs
     const response = await fetch(URBACKEND_API_URL, {
         headers: { 'x-api-key': apiKey }
     });
@@ -60,7 +60,7 @@ export async function markSolved(logId, note) {
         throw new Error("Missing URBACKEND_API_KEY");
     }
 
-    // Urbackend PUT /api/data/:collection/:id
+    // update log status
     const response = await fetch(`${URBACKEND_API_URL}/${logId}`, {
         method: 'PUT',
         headers: {
