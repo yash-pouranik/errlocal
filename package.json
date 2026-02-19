@@ -1,6 +1,6 @@
 {
   "name": "errlocal",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "scripts": {
     "start": "node bin/errlocal.js",
     "test": "echo \"Error: no test specified\" && exit 1"
