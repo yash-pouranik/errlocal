@@ -34,12 +34,13 @@
 
 | Feature | Description |
 | :--- | :--- |
+| **🎮 Interactive UI** | **NEW!** A beautiful terminal menu to Explain, Fix, Translate, or Sync errors without typing more commands. |
+| **🔧 Auto-Fix** | **NEW!** Instantly applies AI-suggested code fixes to your files with a single click. |
 | **🤖 AI Analysis** | Instantly detects **Error Type**, **Confidence**, coverage, and likely causes using **Groq (Llama 3)**. |
 | **📄 Code Context** | **NEW!** Reads your actual code to understand the bug's origin (file & line context). |
 | **🌍 Localization** | Translates technical error hints into your native language (Hindi, Spanish, French, etc.) via **Lingo.dev**. |
 | **☁️ Cloud Sync** | Back up your error logs to **Urbackend** for long-term history and analytics. |
-| **🧠 Smart Hints** | Get progressive hints (`errlocal next`) instead of spoiling the solution immediately. |
-| **🛡️ Universal Wrapper** | Works with any command: `node`, `python`, `npm`, `go`, `rust`, etc. |
+| **🧠 Progressive Hints** | Reveals hints one by one to help you learn, instead of spoiling the solution immediately. |
 
 ---
 
@@ -65,24 +66,37 @@ URBACKEND_API_KEY=...    # Optional: For cloud sync
 Wrap any command that's giving you trouble:
 
 ```bash
-errlocal run node app.js --lang=hi
+errlocal run node app.js
 ```
 
-*(Watch it catch the error and explain it in Hindi!)*
+**💥 Boom!** If an error occurs, `errlocal` pauses and shows an interactive menu:
+
+```text
+? What would you like to do? (Use arrow keys)
+❯ 💡 Explain Error
+  🔧 Auto-Fix
+  🌍 Translate
+  ☁️ Sync to Cloud
+  🚪 Exit
+```
 
 ---
 
 ## 📚 Documentation
 
-### Command Reference
+### Interactive Menu
+- **Explain Error**: Shows detailed AI analysis with progressive hints (Hint 1 -> Hint 2 -> Solution).
+- **Auto-Fix**: If the AI is confident, it suggests a code change. Press `Enter` to apply it to your file instantly!
+- **Translate**: Switch the explanation language on the fly.
+- **Sync**: Upload the error log to your UrBackend dashboard.
+
+### CLI Commands (Legacy & Automation)
 
 | Command | Usage | Description |
 | :--- | :--- | :--- |
-| **Run** | `errlocal run <cmd> [flags]` | Executes a command. If it fails, AI analyzes the stderr. |
-| **Next Hint** | `errlocal next` | Shows the next hint (1 → 2 → 3 → Solution). |
-| **Sync** | `errlocal sync` | Uploads the last error log to Urbackend. |
+| **Run** | `errlocal run <cmd>` | Executes a command and enters Interactive Mode on error. |
 | **History** | `errlocal history` | Fetches the last 5 errors from the cloud. |
-| **Solved** | `errlocal solved "<note>"` | Marks the last synced error as "SOLVED". |
+| **Solved** | `errlocal solved <note>` | Marks the last synced error as "SOLVED". |
 
 ### Flags
 - `--lang=<code >`: Target language ISO code (e.g., `hi`, `es`, `fr`, `de`).
