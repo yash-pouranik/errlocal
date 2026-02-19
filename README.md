@@ -12,7 +12,7 @@
     <img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License" />
   </a>
   <a href="https://www.npmjs.com/">
-    <img src="https://img.shields.io/badge/npm-v0.1.2-red.svg" alt="Version" />
+    <img src="https://img.shields.io/badge/npm-v0.2.0-red.svg" alt="Version" />
   </a>
   <a href="https://groq.com">
     <img src="https://img.shields.io/badge/Powered%20by-Groq-orange" alt="Groq" />
