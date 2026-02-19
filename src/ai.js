@@ -28,8 +28,14 @@ export async function analyzeError(errorOutput, command, codeContext = null) {
     {
         "errorType": "The type of error (e.g., TypeError, SyntaxError)",
         "likelyCause": "A brief explanation of why this happened",
-        "suggestedFix": "A specific code fix suggestion",
         "confidence": "Low, Medium, or High",
+        "fixAction": {
+             "type": "replace_line",
+             "filePath": "The absolute file path if known from context, otherwise relative",
+             "lineNumber": 123,
+             "code": "The exact new line of code to replace the error line with (no markdown)",
+             "description": "Short description of what this fix does"
+        },
         "hints": [
             "Hint 1: A brief, high-level pointer (e.g., check assumptions).",
             "Hint 2: A more specific pointer (e.g., check async/await).",

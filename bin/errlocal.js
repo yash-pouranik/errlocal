@@ -8,11 +8,13 @@ import path from 'path';
 import os from 'os';
 
 import fs from 'fs/promises';
+import { select, confirm } from '@inquirer/prompts';
 
 // Import modules
 import { loadState, saveState } from '../src/state.js';
 import { analyzeError } from '../src/ai.js';
 import { getErrorContext } from '../src/context.js';
+import { applyFix } from '../src/fs-utils.js';
 import { localizeContent } from '../src/lingo.js';
 import { syncLog, fetchHistory, markSolved } from '../src/api.js';
 
@@ -67,46 +69,175 @@ program
 
                 const analysis = await analyzeError(stderrOutput, `${command} ${args.join(' ')}`, codeContext);
                 
-                let localized = analysis;
-
-                if (options.lang) {
-                    try {
-                        console.log(chalk.blue(`Translating to ${options.lang}...`));
-                        localized = await localizeContent(analysis, options.lang);
-                    } catch (lingoError) {
-                        console.error(chalk.red("Localization failed:"), lingoError.message);
-                        console.log(chalk.gray("Falling back to English."));
-                    }
-                }
-
-                // save state
-                const enhancedExplanation = `
-**Error Type:** ${localized.errorType}
-**Confidence:** ${localized.confidence}
-**Likely Cause:** ${localized.likelyCause}
-**Suggested Fix:** ${localized.suggestedFix}
-
----
-${localized.finalExplanation}
-                `.trim();
-
-                const state = {
+                // save initial state
+                let state = {
                     command: `${command} ${args.join(' ')}`,
                     error: stderrOutput,
+                    analysis: analysis, // Store the full analysis object
                     step: 0,
-                    hints: localized.hints,
-                    finalExplanation: enhancedExplanation,
                     timestamp: new Date().toISOString()
                 };
                 await saveState(state);
 
-                console.log(chalk.bold.magenta(`\n🧠 Analysis:`));
-                console.log(`${chalk.bold("Type:")} ${localized.errorType}`);
-                console.log(`${chalk.bold("Confidence:")} ${localized.confidence}`);
+                // Initial Output
+                console.log(chalk.bold.red(`\n❌ Error Detected: ${analysis.errorType}`));
+                console.log(chalk.dim(analysis.likelyCause));
                 
-                console.log(chalk.bold.cyan("\n🔍 Hint 1:"));
-                console.log(localized.hints[0]);
-                console.log(chalk.gray("\n(Run 'errlocal next' for more hints)"));
+                if (analysis.fixAction) {
+                    console.log(chalk.green(`\n💡 Fix Available: ${analysis.fixAction.description || 'Auto-fix ready'}`));
+                }
+
+                while (true) {
+                    const action = await select({
+                        message: 'What would you like to do?',
+                        choices: [
+                            {
+                                name: '💡 Explain Error',
+                                value: 'explain',
+                                description: 'Show detailed explanation and hints'
+                            },
+                            {
+                                name: '🔧 Auto-Fix',
+                                value: 'fix',
+                                disabled: !analysis.fixAction ? '(No auto-fix available)' : false,
+                                description: 'Apply the suggested fix automatically'
+                            },
+                            {
+                                name: '🌍 Translate',
+                                value: 'translate',
+                                description: 'Translate explanation to another language'
+                            },
+                            {
+                                name: '☁️ Sync to Cloud',
+                                value: 'sync',
+                                description: 'Sync error log to dashboard'
+                            },
+                            {
+                                name: '🚪 Exit',
+                                value: 'exit'
+                            }
+                        ]
+                    });
+
+                    if (action === 'exit') {
+                        break;
+                    }
+
+                    if (action === 'explain') {
+                        console.log(chalk.bold.magenta(`\n🧠 Analysis:`));
+                        console.log(`${chalk.bold("Type:")} ${analysis.errorType}`);
+                        console.log(`${chalk.bold("Confidence:")} ${analysis.confidence}`);
+                        
+                        // Progressive Hint Loop
+                        let hintIndex = 0;
+                        const hints = analysis.hints || [];
+                        
+                        while(true) {
+                            // Show current hint key
+                            if (hintIndex < hints.length) {
+                                console.log(chalk.bold.cyan(`\n🔍 Hint ${hintIndex + 1}:`));
+                                console.log(hints[hintIndex]);
+                            } else {
+                                console.log(chalk.bold.green("\n✅ Full Explanation:"));
+                                console.log(analysis.finalExplanation || "No detailed explanation available.");
+                                break; // End of explanation
+                            }
+
+                            const nextAction = await select({
+                                message: 'Next step?',
+                                choices: [
+                                    {
+                                        name: hintIndex < hints.length - 1 ? '👉 Next Hint' : '✅ Show Full Explanation',
+                                        value: 'next'
+                                    },
+                                    {
+                                        name: '🔙 Back to Menu',
+                                        value: 'back'
+                                    }
+                                ]
+                            });
+
+                            if (nextAction === 'back') {
+                                break;
+                            }
+
+                            hintIndex++;
+                        }
+                        console.log(''); // newline
+                    }
+
+                    if (action === 'fix') {
+                         if (!analysis.fixAction) {
+                             console.log(chalk.yellow("No auto-fix available for this error."));
+                             continue;
+                         }
+
+                         console.log(chalk.bold.cyan("\nProposed Change:"));
+                         console.log(`${chalk.gray(analysis.fixAction.filePath)}:${chalk.yellow(analysis.fixAction.lineNumber)}`);
+                         console.log(chalk.red("- (Old Code) [Need to read file to show old code, or rely on user trust]")); 
+                         // Note: In a real diff we'd show old code. For now showing new.
+                         console.log(chalk.green(`+ ${analysis.fixAction.code}`));
+
+                         const confirmed = await confirm({ message: 'Apply this fix now?' });
+                         
+                         if (confirmed) {
+                             const success = await applyFix(analysis.fixAction);
+                             if (success) {
+                                 console.log(chalk.bold.green("🚀 Fix applied! Try running the command again."));
+                                 break; // Exit after fixing
+                             }
+                         }
+                    }
+
+                    if (action === 'translate') {
+                        const lang = await select({
+                            message: 'Select Language:',
+                            choices: [
+                                { name: 'Hindi (hi)', value: 'hi' },
+                                { name: 'Spanish (es)', value: 'es' },
+                                { name: 'French (fr)', value: 'fr' },
+                                { name: 'German (de)', value: 'de' }
+                            ]
+                        });
+
+                        try {
+                            console.log(chalk.blue(`Translating to ${lang}...`));
+                            const localized = await localizeContent(state.analysis, lang);
+                            // Update state with localized version for display
+                            analysis.likelyCause = localized.likelyCause;
+                            analysis.finalExplanation = localized.finalExplanation;
+                            analysis.hints = localized.hints;
+                            console.log(chalk.green("✅ Translated!"));
+                            
+                            // Show the translation immediately
+                            console.log(chalk.bold.magenta(`\n🧠 Analysis (${lang}):`));
+                            console.log(analysis.likelyCause);
+                            console.log(analysis.finalExplanation);
+
+                        } catch (err) {
+                            console.error(chalk.red("Translation failed:"), err.message);
+                        }
+                    }
+
+                    if (action === 'sync') {
+                         // Call existing sync logic (refactored or invoked)
+                         // For now, let's keep it simple and just run the sync logic here or call a helper
+                         // accessing program commands is tricky from here. 
+                         // better to just call the API function directly if possible.
+                         // But for now, let's just use the existing syncLog function
+                         try {
+                              const note = await select({
+                                  message: "Syncing...",
+                                  choices: [{name: "Continue", value: "go"}]
+                              });
+                              // We need to import syncLog. It was imported.
+                              const logId = await syncLog({ ...state, analysis }); 
+                              console.log(chalk.green(`✅ Synced! Log ID: ${logId}`));
+                         } catch (err) {
+                             console.log(chalk.red("Sync failed"));
+                         }
+                    }
+                }
 
             } catch (err) {
                 console.error(chalk.red("Analysis failed:"), err.message);
