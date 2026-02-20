@@ -20,8 +20,9 @@ export async function analyzeError(errorOutput, command, codeContext = null) {
     }
 
     const prompt = `
-    You are an expert developer assistant.
-    Analyze the following error output from the command "${command}".
+    You are an elite, senior 10x systems engineer and expert debugger.
+    Your objective is to analyze the following error output from the failing command "${command}" with hyper-precision.
+    You do not hallucinate. You find the exact root cause.
     ${contextSection}
     
     Provide your response in strict JSON format with the following structure:
@@ -52,7 +53,7 @@ export async function analyzeError(errorOutput, command, codeContext = null) {
         messages: [
             {
                 role: "system",
-                content: "You are a helpful assistant that outputs JSON."
+                content: "You are an elite software debugging AI. Your only purpose is to analyze stack traces and code contexts to provide insanely accurate, progressive hints and flawless auto-fixes. You always respond in strict JSON."
             },
             {
                 role: "user",
