@@ -44,6 +44,14 @@
 
 ---
 
+## 🏗️ Architecture & Flow
+
+<p align="center">
+  <img src="./errlocal_activity_diagram.svg" alt="errlocal Activity Diagram" width="100%">
+</p>
+
+---
+
 ## 🚀 Quick Start
 
 ### 1. Install
@@ -98,7 +106,7 @@ errlocal run node app.js
 | **Solved** | `errlocal solved <note>` | Marks the last synced error as "SOLVED". |
 
 ### Flags
-- `--lang=<code >`: Target language ISO code (e.g., `hi`, `es`, `fr`, `de`).
+- `--lang=<code >`: Target language ISO code (e.g., `hi`, `es`, `fr`, `de`) `Available in v0.1 and v0.2, but menu based in v0.3`.
 
 ---
 
