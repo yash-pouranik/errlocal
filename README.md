@@ -12,7 +12,7 @@
     <img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License" />
   </a>
   <a href="https://www.npmjs.com/">
-    <img src="https://img.shields.io/badge/npm-v0.2.0-red.svg" alt="Version" />
+    <img src="https://img.shields.io/badge/npm-v0.3.0-red.svg" alt="Version" />
   </a>
   <a href="https://groq.com">
     <img src="https://img.shields.io/badge/Powered%20by-Groq-orange" alt="Groq" />
@@ -53,14 +53,13 @@ From your terminal, install `errlocal` globally:
 npm install -g errlocal
 ```
 
-### 2. Configure
-Create a `.env` file (in your project or at `~/.errlocal/.env`) with your keys:
+### 2. Initialize the Configuration
+No need to manually mess with files! Just run the interactive setup:
 
 ```bash
-GROQ_API_KEY=gsk_...
-LINGO_API_KEY=ln_...
-URBACKEND_API_KEY=...    # Optional: For cloud sync
+errlocal init
 ```
+*This prompts you for your `GROQ_API_KEY`, `LINGO_API_KEY` (optional), and `URBACKEND_API_KEY` (optional).*
 
 ### 3. Run
 Wrap any command that's giving you trouble:
@@ -108,10 +107,8 @@ errlocal run node app.js
 To enable **Sync**, **History**, and **Solved** features, configure your Urbackend project.
 
 1.  **Create Project**: Log in to [Urbackend Dashboard](https://urbackend.bitbros.in/).
-2.  **Get Key**: Copy your **Public API Key** to `.env`.
-3.  **Create Table**: Create a collection named **`error_logs`** with this exact schema:
-
-> **⚠️ Important**: All columns must be type **String**.
+2.  **Get Key**: Copy your **Public API Key** and paste it during `errlocal init`.
+3.  **Zero-Config Schema**: That's it! The first time you sync an error log, `errlocal` automatically provisions the `error_logs` table and schema inside your UrBackend project. You no longer need to configure the schema manually!
 
 | Column | Type | Description |
 | :--- | :--- | :--- |

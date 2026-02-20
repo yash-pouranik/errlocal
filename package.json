@@ -1,9 +1,9 @@
 {
   "name": "errlocal",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "scripts": {
     "start": "node bin/errlocal.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "vitest run"
   },
   "keywords": [
     "cli",
@@ -34,5 +34,8 @@
     "execa": "^8.0.1",
     "groq-sdk": "^0.37.0",
     "lingo.dev": "^0.131.4"
+  },
+  "devDependencies": {
+    "vitest": "^4.0.18"
   }
 }

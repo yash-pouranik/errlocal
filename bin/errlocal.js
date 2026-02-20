@@ -8,7 +8,7 @@ import path from 'path';
 import os from 'os';
 
 import fs from 'fs/promises';
-import { select, confirm } from '@inquirer/prompts';
+import { select, confirm, input } from '@inquirer/prompts';
 
 // Import modules
 import { loadState, saveState } from '../src/state.js';
@@ -32,6 +32,47 @@ const pkg = JSON.parse(await fs.readFile(new URL('../package.json', import.meta.
 program
     .version(pkg.version, '-v, -V, --version')
     .description('Run a command and localize its error output using AI & Lingo.dev');
+
+// handle default or added commands
+program
+  .command('init')
+  .description('Initialize errlocal configuration and save API keys to .env')
+  .action(async () => {
+      console.log(chalk.bold.blue('\n🚀 Welcome to errlocal setup!\n'));
+      console.log(chalk.gray('We need a few API keys to get started. You can get these from their respective platforms.\n'));
+
+      const groqKey = await input({
+          message: 'Enter your GROQ_API_KEY (for AI analysis):',
+          default: process.env.GROQ_API_KEY || '',
+          validate: (val) => val.trim().length > 0 ? true : 'Key cannot be empty',
+      });
+
+      const lingoKey = await input({
+          message: 'Enter your LINGO_API_KEY (optional, for translations):',
+          default: process.env.LINGO_API_KEY || '',
+      });
+
+      const urbackendKey = await input({
+          message: 'Enter your URBACKEND_API_KEY (optional, for cloud sync/history):',
+          default: process.env.URBACKEND_API_KEY || '',
+      });
+
+      const envContent = `GROQ_API_KEY=${groqKey.trim()}
+LINGO_API_KEY=${lingoKey.trim()}
+URBACKEND_API_KEY=${urbackendKey.trim()}
+`;
+
+      try {
+          const globalConfigDir = path.dirname(globalConfigPath);
+          await fs.mkdir(globalConfigDir, { recursive: true });
+          await fs.writeFile(globalConfigPath, envContent, { mode: 0o600 });
+          
+          console.log(chalk.green(`\n✅ Setup complete! API keys saved to ${globalConfigPath}`));
+          console.log(chalk.blue(`\nYou can now run ${chalk.bold('errlocal run <command>')} to start catching errors.`));
+      } catch (err) {
+          console.error(chalk.red('\nFailed to save configuration:'), err.message);
+      }
+  });
 
 program
   .command('run <command> [args...]')
@@ -105,11 +146,13 @@ program
                             {
                                 name: '🌍 Translate',
                                 value: 'translate',
+                                disabled: !process.env.LINGO_API_KEY ? '(Disabled: Missing LINGO_API_KEY, run "errlocal init")' : false,
                                 description: 'Translate explanation to another language'
                             },
                             {
                                 name: '☁️ Sync to Cloud',
                                 value: 'sync',
+                                disabled: !process.env.URBACKEND_API_KEY ? '(Disabled: Missing URBACKEND_API_KEY, run "errlocal init")' : false,
                                 description: 'Sync error log to dashboard'
                             },
                             {
@@ -356,8 +399,8 @@ program
   });
 
 // Handle default command
-if (process.argv.length > 2 && !['run', 'next', 'sync', 'history', 'solved', '--help', '-h', '--version', '-V'].includes(process.argv[2])) {
-    // If command not recognized, logic to handle or warn can go here
+if (process.argv.length > 2 && !['init', 'run', 'next', 'sync', 'history', 'solved', '--help', '-h', '--version', '-V'].includes(process.argv[2])) {
+    process.argv.splice(2, 0, 'run');
 }
 
 program.parse(process.argv);
