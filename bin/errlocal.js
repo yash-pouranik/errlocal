@@ -250,12 +250,7 @@ program
                             analysis.likelyCause = localized.likelyCause;
                             analysis.finalExplanation = localized.finalExplanation;
                             analysis.hints = localized.hints;
-                            console.log(chalk.green("✅ Translated!"));
-                            
-                            // Show the translation immediately
-                            console.log(chalk.bold.magenta(`\n🧠 Analysis (${lang}):`));
-                            console.log(analysis.likelyCause);
-                            console.log(analysis.finalExplanation);
+                            console.log(chalk.green(`\n✅ Translated successfully! Select 'Explain Error' from the menu to view the progressive hints in ${lang}.`));
 
                         } catch (err) {
                             console.error(chalk.red("Translation failed:"), err.message);
