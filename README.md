@@ -29,6 +29,8 @@
 </div>
 
 ---
+[Demo Video](https://youtu.be/BxfQUFHwpLk?si=dFzm1H6HIlcxDOI1)
+
 
 ## ⚡ Features
 
