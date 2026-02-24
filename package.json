@@ -1,6 +1,6 @@
 {
   "name": "errlocal",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "scripts": {
     "start": "node bin/errlocal.js",
     "test": "vitest run"
@@ -18,6 +18,10 @@
   "license": "MIT",
   "description": "A CLI tool to fix runtime errors in seconds with AI & Localization.",
   "type": "module",
+  "files": [
+    "bin",
+    "src"
+  ],
   "bin": {
     "errlocal": "./bin/errlocal.js"
   },
